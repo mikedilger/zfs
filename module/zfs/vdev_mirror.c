@@ -114,8 +114,23 @@ vdev_mirror_map_alloc(zio_t *zio)
 		    KM_PUSHPAGE);
 		mm->mm_children = c;
 		mm->mm_replacing = B_FALSE;
-		mm->mm_preferred = spa_get_random(c);
 		mm->mm_root = B_TRUE;
+
+		for (c = 0; c < mm->mm_children; c++) {
+			mc = &mm->mm_child[c];
+			mc->mc_vd = vdev_lookup_top(spa, DVA_GET_VDEV(&dva[c]));
+			if (mc->mc_vd == NULL) {
+#ifdef _KERNEL
+				printk("%s: bogus DVA %llu in slot %d, ignoring\n",
+					__FUNCTION__,
+					DVA_GET_VDEV(&dva[c]),c);
+#endif
+				--mm->mm_children;
+			} else
+				mc->mc_offset = DVA_GET_OFFSET(&dva[c]);
+		}
+		VERIFY(c);
+		mm->mm_preferred = spa_get_random(c);
 
 		/*
 		 * Check the other, lower-index DVAs to see if they're on
@@ -127,13 +142,6 @@ vdev_mirror_map_alloc(zio_t *zio)
 		for (c = mm->mm_preferred, d = c - 1; d >= 0; d--) {
 			if (DVA_GET_VDEV(&dva[d]) == DVA_GET_VDEV(&dva[c]))
 				mm->mm_preferred = d;
-		}
-
-		for (c = 0; c < mm->mm_children; c++) {
-			mc = &mm->mm_child[c];
-
-			mc->mc_vd = vdev_lookup_top(spa, DVA_GET_VDEV(&dva[c]));
-			mc->mc_offset = DVA_GET_OFFSET(&dva[c]);
 		}
 	} else {
 		int lowest_pending = INT_MAX;
