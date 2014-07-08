@@ -108,7 +108,8 @@ vdev_mirror_map_alloc(zio_t *zio)
 		dva_t *dva = zio->io_bp->blk_dva;
 		spa_t *spa = zio->io_spa;
 
-		c = BP_GET_NDVAS(zio->io_bp);
+		//c = BP_GET_NDVAS(zio->io_bp);
+		c = 1; // MIKE HARDCODED TO SEE IF THIS IS THE ISSUE
 
 		mm = kmem_zalloc(offsetof(mirror_map_t, mm_child[c]),
 		    KM_PUSHPAGE);
@@ -296,6 +297,9 @@ vdev_mirror_child_select(zio_t *zio)
 	int i, c;
 
 	ASSERT(zio->io_bp == NULL || BP_PHYSICAL_BIRTH(zio->io_bp) == txg);
+
+	VERIFY( 0 <= mm->mm_preferred );
+	VERIFY( 2 >= mm->mm_preferred );
 
 	/*
 	 * Try to find a child whose DTL doesn't contain the block to read.
