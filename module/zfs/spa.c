@@ -2132,6 +2132,10 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	uint64_t obj;
 	boolean_t missing_feat_write = B_FALSE;
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 01");
+#endif
+
 	/*
 	 * If this is an untrusted config, access the pool in read-only mode.
 	 * This prevents things like resilvering recently removed devices.
@@ -2140,6 +2144,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa->spa_mode = FREAD;
 
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 02");
+#endif
 
 	spa->spa_load_state = state;
 
@@ -2154,6 +2161,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 */
 	spa->spa_async_zio_root = zio_root(spa, NULL, NULL,
 	    ZIO_FLAG_CANFAIL | ZIO_FLAG_SPECULATIVE | ZIO_FLAG_GODFATHER);
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 03");
+#endif
 
 	/*
 	 * Parse the configuration into a vdev tree.  We explicitly set the
@@ -2168,6 +2178,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		return (error);
 
 	ASSERT(spa->spa_root_vdev == rvd);
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 04");
+#endif
 
 	if (type != SPA_IMPORT_ASSEMBLE) {
 		ASSERT(spa_guid(spa) == pool_guid);
@@ -2181,6 +2194,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	spa_config_exit(spa, SCL_ALL, FTAG);
 	if (error != 0)
 		return (error);
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 05");
+#endif
 
 	/*
 	 * We need to validate the vdev labels against the configuration that
@@ -2199,6 +2215,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 		error = vdev_validate(rvd, mosconfig);
 		spa_config_exit(spa, SCL_ALL, FTAG);
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 06");
+#endif
 
 		if (error != 0)
 			return (error);
@@ -2206,6 +2225,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		if (rvd->vdev_state <= VDEV_STATE_CANT_OPEN)
 			return (SET_ERROR(ENXIO));
 	}
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 07");
+#endif
 
 	/*
 	 * Find the best uberblock.
@@ -2227,6 +2249,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		nvlist_free(label);
 		return (spa_vdev_err(rvd, VDEV_AUX_VERSION_NEWER, ENOTSUP));
 	}
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 08");
+#endif
 
 	if (ub->ub_version >= SPA_VERSION_FEATURES) {
 		nvlist_t *features;
@@ -2241,6 +2266,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA,
 			    ENXIO));
 		}
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 09");
+#endif
 
 		/*
 		 * Update our in-core representation with the definitive values
@@ -2250,6 +2278,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		VERIFY(nvlist_dup(features, &spa->spa_label_features, 0) == 0);
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 10");
+#endif
 	nvlist_free(label);
 
 	/*
@@ -2264,6 +2295,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		VERIFY(nvlist_alloc(&unsup_feat, NV_UNIQUE_NAME, KM_SLEEP) ==
 		    0);
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 11");
+#endif
 		for (nvp = nvlist_next_nvpair(spa->spa_label_features, NULL);
 		    nvp != NULL;
 		    nvp = nvlist_next_nvpair(spa->spa_label_features, nvp)) {
@@ -2273,6 +2307,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			}
 		}
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 12");
+#endif
 		if (!nvlist_empty(unsup_feat)) {
 			VERIFY(nvlist_add_nvlist(spa->spa_load_info,
 			    ZPOOL_CONFIG_UNSUP_FEAT, unsup_feat) == 0);
@@ -2281,8 +2318,14 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			    ENOTSUP));
 		}
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 13");
+#endif
 		nvlist_free(unsup_feat);
 	}
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 14");
+#endif
 
 	/*
 	 * If the vdev guid sum doesn't match the uberblock, we have an
@@ -2296,6 +2339,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	    rvd->vdev_guid_sum != ub->ub_guid_sum)
 		return (spa_vdev_err(rvd, VDEV_AUX_BAD_GUID_SUM, ENXIO));
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 15");
+#endif
 	if (type != SPA_IMPORT_ASSEMBLE && spa->spa_config_splitting) {
 		spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 		spa_try_repair(spa, config);
@@ -2307,6 +2353,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	/*
 	 * Initialize internal SPA structures.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 16");
+#endif
 	spa->spa_state = POOL_STATE_ACTIVE;
 	spa->spa_ubsync = spa->spa_uberblock;
 	spa->spa_verify_min_txg = spa->spa_extreme_rewind ?
@@ -2315,6 +2364,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	    spa->spa_last_ubsync_txg : spa_last_synced_txg(spa) + 1;
 	spa->spa_claim_max_txg = spa->spa_first_txg;
 	spa->spa_prev_software_version = ub->ub_software_version;
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 17");
+#endif
 
 	error = dsl_pool_init(spa, spa->spa_first_txg, &spa->spa_dsl_pool);
 	if (error)
@@ -2324,6 +2376,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	if (spa_dir_prop(spa, DMU_POOL_CONFIG, &spa->spa_config_object) != 0)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 18");
+#endif
 	if (spa_version(spa) >= SPA_VERSION_FEATURES) {
 		boolean_t missing_feat_read = B_FALSE;
 		nvlist_t *unsup_feat, *enabled_feat;
@@ -2333,6 +2388,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 		}
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 19");
+#endif
 		if (spa_dir_prop(spa, DMU_POOL_FEATURES_FOR_WRITE,
 		    &spa->spa_feat_for_write_obj) != 0) {
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
@@ -2343,6 +2401,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 		}
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 20");
+#endif
 		enabled_feat = fnvlist_alloc();
 		unsup_feat = fnvlist_alloc();
 
@@ -2351,6 +2412,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		    unsup_feat, enabled_feat))
 			missing_feat_read = B_TRUE;
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 21");
+#endif
 		if (spa_writeable(spa) || state == SPA_LOAD_TRYIMPORT) {
 			if (!feature_is_supported(spa->spa_meta_objset,
 			    spa->spa_feat_for_write_obj, spa->spa_feat_desc_obj,
@@ -2362,6 +2426,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		fnvlist_add_nvlist(spa->spa_load_info,
 		    ZPOOL_CONFIG_ENABLED_FEAT, enabled_feat);
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 22");
+#endif
 		if (!nvlist_empty(unsup_feat)) {
 			fnvlist_add_nvlist(spa->spa_load_info,
 			    ZPOOL_CONFIG_UNSUP_FEAT, unsup_feat);
@@ -2370,6 +2437,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		fnvlist_free(enabled_feat);
 		fnvlist_free(unsup_feat);
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 23");
+#endif
 		if (!missing_feat_read) {
 			fnvlist_add_boolean(spa->spa_load_info,
 			    ZPOOL_CONFIG_CAN_RDONLY);
@@ -2394,6 +2464,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * userland in order to know whether to display the
 		 * abovementioned note.
 		 */
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 24");
+#endif
 		if (missing_feat_read || (missing_feat_write &&
 		    spa_writeable(spa))) {
 			return (spa_vdev_err(rvd, VDEV_AUX_UNSUP_FEAT,
@@ -2401,12 +2474,18 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		}
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 25");
+#endif
 	spa->spa_is_initializing = B_TRUE;
 	error = dsl_pool_open(spa->spa_dsl_pool);
 	spa->spa_is_initializing = B_FALSE;
 	if (error != 0)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 26");
+#endif
 	if (!mosconfig) {
 		uint64_t hostid;
 		nvlist_t *policy = NULL, *nvconfig;
@@ -2414,6 +2493,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		if (load_nvlist(spa, spa->spa_config_object, &nvconfig) != 0)
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 27");
+#endif
 		if (!spa_is_root(spa) && nvlist_lookup_uint64(nvconfig,
 		    ZPOOL_CONFIG_HOSTID, &hostid) == 0) {
 			char *hostname;
@@ -2421,6 +2503,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 
 			VERIFY(nvlist_lookup_string(nvconfig,
 			    ZPOOL_CONFIG_HOSTNAME, &hostname) == 0);
+#ifdef	_KERNEL
+			printk("DILGER GOT HERE 28");
+#endif
 
 #ifdef	_KERNEL
 			myhostid = zone_get_hostid(NULL);
@@ -2431,6 +2516,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			 */
 			(void) ddi_strtoul(hw_serial, NULL, 10, &myhostid);
 #endif	/* _KERNEL */
+#ifdef	_KERNEL
+			printk("DILGER GOT HERE 29");
+#endif
 			if (hostid != 0 && myhostid != 0 &&
 			    hostid != myhostid) {
 				nvlist_free(nvconfig);
@@ -2448,6 +2536,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			VERIFY(nvlist_add_nvlist(nvconfig,
 			    ZPOOL_REWIND_POLICY, policy) == 0);
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 30");
+#endif
 		spa_config_set(spa, nvconfig);
 		spa_unload(spa);
 		spa_deactivate(spa);
@@ -2456,6 +2547,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		return (spa_load(spa, state, SPA_IMPORT_EXISTING, B_TRUE));
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 31");
+#endif
 	if (spa_dir_prop(spa, DMU_POOL_SYNC_BPOBJ, &obj) != 0)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 	error = bpobj_open(&spa->spa_deferred_bpobj, spa->spa_meta_objset, obj);
@@ -2467,6 +2561,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 * (raid-z deflation).  If we have an older pool, this will not
 	 * be present.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 32");
+#endif
 	error = spa_dir_prop(spa, DMU_POOL_DEFLATE, &spa->spa_deflate);
 	if (error != 0 && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
@@ -2475,6 +2572,10 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	    &spa->spa_creation_version);
 	if (error != 0 && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 33");
+#endif
 
 	/*
 	 * Load the persistent error log.  If we have an older pool, this will
@@ -2488,6 +2589,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	    &spa->spa_errlog_scrub);
 	if (error != 0 && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 34");
+#endif
 
 	/*
 	 * Load the history object.  If we have an older pool, this
@@ -2506,6 +2610,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	/*
 	 * Load any hot spares for this pool.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 35");
+#endif
 	error = spa_dir_prop(spa, DMU_POOL_SPARES, &spa->spa_spares.sav_object);
 	if (error != 0 && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
@@ -2521,6 +2628,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	} else if (error == 0) {
 		spa->spa_spares.sav_sync = B_TRUE;
 	}
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 36");
+#endif
 
 	/*
 	 * Load any level 2 ARC devices for this pool.
@@ -2529,6 +2639,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	    &spa->spa_l2cache.sav_object);
 	if (error != 0 && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 37");
+#endif
 	if (error == 0 && type != SPA_IMPORT_ASSEMBLE) {
 		ASSERT(spa_version(spa) >= SPA_VERSION_L2CACHE);
 		if (load_nvlist(spa, spa->spa_l2cache.sav_object,
@@ -2542,12 +2655,18 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 38");
+#endif
 	spa->spa_delegation = zpool_prop_default_numeric(ZPOOL_PROP_DELEGATION);
 
 	error = spa_dir_prop(spa, DMU_POOL_PROPS, &spa->spa_pool_props_object);
 	if (error && error != ENOENT)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 39");
+#endif
 	if (error == 0) {
 		uint64_t autoreplace = 0;
 
@@ -2569,6 +2688,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 * unopenable vdevs so that the normal autoreplace handler can take
 	 * over.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 40");
+#endif
 	if (spa->spa_autoreplace && state != SPA_LOAD_TRYIMPORT) {
 		spa_check_removed(spa->spa_root_vdev);
 		/*
@@ -2585,6 +2707,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	/*
 	 * Load the vdev state for all toplevel vdevs.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 41");
+#endif
 	vdev_load(rvd);
 
 	/*
@@ -2597,6 +2722,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	/*
 	 * Load the DDTs (dedup tables).
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 42");
+#endif
 	error = ddt_load(spa);
 	if (error != 0)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
@@ -2610,12 +2738,18 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 * assembling a pool from a split, the log is not transferred
 	 * over.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 43");
+#endif
 	if (type != SPA_IMPORT_ASSEMBLE) {
 		nvlist_t *nvconfig;
 
 		if (load_nvlist(spa, spa->spa_config_object, &nvconfig) != 0)
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 44");
+#endif
 		if (!spa_config_valid(spa, nvconfig)) {
 			nvlist_free(nvconfig);
 			return (spa_vdev_err(rvd, VDEV_AUX_BAD_GUID_SUM,
@@ -2628,6 +2762,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * root vdev.  If it can't be opened, it indicates one or
 		 * more toplevel vdevs are faulted.
 		 */
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 45");
+#endif
 		if (rvd->vdev_state <= VDEV_STATE_CANT_OPEN)
 			return (SET_ERROR(ENXIO));
 
@@ -2637,6 +2774,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		}
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 46");
+#endif
 	if (missing_feat_write) {
 		ASSERT(state == SPA_LOAD_TRYIMPORT);
 
@@ -2652,12 +2792,18 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 * We've successfully opened the pool, verify that we're ready
 	 * to start pushing transactions.
 	 */
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 47");
+#endif
 	if (state != SPA_LOAD_TRYIMPORT) {
 		if ((error = spa_load_verify(spa)))
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA,
 			    error));
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 48");
+#endif
 	if (spa_writeable(spa) && (state == SPA_LOAD_RECOVER ||
 	    spa->spa_load_max_txg == UINT64_MAX)) {
 		dmu_tx_t *tx;
@@ -2675,6 +2821,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 */
 		spa->spa_claiming = B_TRUE;
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 49");
+#endif
 		tx = dmu_tx_create_assigned(spa_get_dsl(spa),
 		    spa_first_txg(spa));
 		(void) dmu_objset_find(spa_name(spa),
@@ -2683,6 +2832,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 
 		spa->spa_claiming = B_FALSE;
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 50");
+#endif
 		spa_set_log_state(spa, SPA_LOG_GOOD);
 		spa->spa_sync_on = B_TRUE;
 		txg_sync_start(spa->spa_dsl_pool);
@@ -2695,7 +2847,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * (invoked from spa_check_logs()) or zil_claim() above.
 		 */
 		txg_wait_synced(spa->spa_dsl_pool, spa->spa_claim_max_txg);
-
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 51");
+#endif
 		/*
 		 * If the config cache is stale, or we have uninitialized
 		 * metaslabs (see spa_vdev_add()), then update the config.
@@ -2709,6 +2863,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		    (spa->spa_import_flags & ZFS_IMPORT_VERBATIM))
 			need_update = B_TRUE;
 
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 52");
+#endif
 		for (c = 0; c < rvd->vdev_children; c++)
 			if (rvd->vdev_child[c]->vdev_ms_array == 0)
 				need_update = B_TRUE;
@@ -2719,6 +2876,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 */
 		if (need_update)
 			spa_async_request(spa, SPA_ASYNC_CONFIG_UPDATE);
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 53");
+#endif
 
 		/*
 		 * Check all DTLs to see if anything needs resilvering.
@@ -2732,6 +2892,9 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * we rebooted in the middle of an operation).
 		 */
 		spa_history_log_version(spa, "open");
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 54");
+#endif
 
 		/*
 		 * Delete any inconsistent datasets.
@@ -2743,8 +2906,14 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * Clean up any stale temporary dataset userrefs.
 		 */
 		dsl_pool_clean_tmp_userrefs(spa->spa_dsl_pool);
+#ifdef	_KERNEL
+		printk("DILGER GOT HERE 55");
+#endif
 	}
 
+#ifdef	_KERNEL
+	printk("DILGER GOT HERE 56");
+#endif
 	return (0);
 }
 
